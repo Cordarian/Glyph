@@ -1,0 +1,497 @@
+; DIRECTIVES ==============================================
+{
+	#SingleInstance Force ; Prevents multiple versions of script from running
+	SendMode("Input") ; Makes Send synonymous with SendInput
+	#UseHook ; Helps prevent modifier key remaining stuck down
+	A_MenuMaskKey := "vkFF" ; Helps prevent modifier key remaining stuck down
+	SetTitleMatchMode(2)
+}
+
+
+; HOTKEYS =================================================
+CapsLock & a::
+CapsLock & b::
+CapsLock & c::
+CapsLock & d::
+CapsLock & e::
+CapsLock & f::
+CapsLock & g::
+CapsLock & h::
+CapsLock & i::
+CapsLock & j::
+CapsLock & k::
+CapsLock & l::
+CapsLock & m::
+CapsLock & n::
+CapsLock & o::
+CapsLock & p::
+CapsLock & r::
+CapsLock & s::
+CapsLock & t::
+CapsLock & u::
+CapsLock & v::
+CapsLock & w::
+CapsLock & x::
+CapsLock & y::
+CapsLock & z::
+{
+	Global
+	; Destroys GUI if it already exists
+	If WinExist("Select a character to insert - Glyph") {
+		GlyphGUI_Destroy()
+	}
+
+	ActiveHwnd := WinExist("A") ; Saves active window to Send to later
+
+	capitalized := GetKeyState("Shift", "P") ; Checks for capitalization
+	this_letter := SubStr(A_ThisHotkey, -1) ; Strips letter from hotkey
+
+	launch_Glyph(this_letter)
+
+	SetCapsLockState("AlwaysOff") ; Prevents Capslock being turned on accidentally
+}
+
+
+#HotIf WinActive("Select a character to insert - Glyph")
+Enter::
+NumpadEnter::{
+	Global
+	Send_Glyph(GlyphListBox)
+}
+
+BackSpace::{
+	GlyphGUI_Destroy()
+}
+
+
+1::
+2::
+3::
+4::
+5::
+6::
+7::
+8::
+9::
+0::
+Numpad1::
+Numpad2::
+Numpad3::
+Numpad4::
+Numpad5::
+Numpad6::
+Numpad7::
+Numpad8::
+Numpad9::
+Numpad0::{
+	; Sends the first/second/etc. glyph from the list
+	Global
+	this_number := SubStr(A_ThisHotkey, -1, 1) ; Strips the number from the hotkey
+	Try { ; Will fail if there is no glyph in that position number
+		GlyphListBox.Choose(Integer(this_number)) ; Selects the appropriate row
+	}
+	Send_Glyph(GlyphListBox)
+}
+
+; FUNCTIONS ===============================================
+Launch_Glyph(this_letter) {
+	Global
+	; Create the GUI
+	GlyphGUI := Gui()
+	GlyphGUI.Title := "Select a character to insert - Glyph"
+	GlyphGUI.MarginX := 0
+	GlyphGUI.MarginY := 0
+	GlyphGUI.Opt("+AlwaysOnTop -MaximizeBox -MinimizeBox")
+	GlyphGUI.SetFont("s12")
+
+	GlyphListBox := GlyphGUI.Add("ListBox", "R10 w275 T36", Glyphs_%this_letter%)
+	GlyphGUI.Add("Text", "w275 Center", "Backspace or Escape to cancel")
+
+	; GUI Events
+	GlyphListBox.OnEvent("DoubleClick", Send_Glyph)
+	GlyphListBox.OnEvent("LoseFocus", GlyphGUI_Destroy)
+	GlyphGUI.OnEvent("Escape", GlyphGUI_Destroy)
+
+	; Position GUI near mouse cursor
+	CoordMode "Mouse", "Screen"
+	MouseGetPos(&MouseX, &MouseY)
+	GlyphGUI.Show("x" . MouseX - 10. " y" . MouseY - 5 . " NA Autosize")
+}
+
+
+Send_Glyph(GuiCtrlObj, *) {
+	this_glyph := SubStr(GuiCtrlObj.Text, -1) ; Strips glyph from rest of line
+	GlyphGUI_Destroy()
+
+	; Reactivates previous window to Send to
+	Try { ; May fail if the previously active window was closed
+		WinActivate(ActiveHwnd)
+	}
+	Catch {
+		Sleep(250) ; Gives another window a chance to activate instead of the GUI or ActiveHwnd
+	}
+
+	; Sends as capitalized or lowercase
+	If capitalized {
+		Send(this_glyph)
+	}
+	Else Send(StrLower(this_glyph))
+}
+
+GlyphGUI_Destroy(*) {
+	Global
+	GlyphGUI.Destroy()
+}
+
+
+; GLYPH ARRAYS ============================================
+Glyphs_a := [
+	"Acute			Á",
+	"Breve			Ă",
+	"Caron			Ǎ",
+	"Circumflex		Â",
+	"Diaeresis			Ä",
+	"Dot above		Ȧ",
+	"Dot below		Ạ",
+	"Grave			À",
+	"Hook above		Ả",
+	"Macron			Ā",
+	"Ogonek			Ą",
+	"Ring above		Å",
+	"Ring below		Ḁ",
+	"Tilde			Ã",
+	"Breve and acute		Ắ",
+	"Breve and dot below	Ặ",
+	"Breve and grave		Ằ",
+	"Breve and hook above	Ẳ",
+	"Breve and tilde		Ẵ",
+	"Circumflex and acute	Ấ",
+	"Circumflex and dot below	Ậ",
+	"Circumflex and grave	Ầ",
+	"Circumflex and hook above	Ẩ",
+	"Circumflex and tilde		Ẫ",
+	"Diaeresis and macron	Ǟ",
+	"Dot above and macron	Ǡ",
+	"Double grave		Ȁ",
+	"Inverted breve		Ȃ",
+	"Ring above and acute	Ǻ",
+	"Ash			Æ",
+	"Ash with acute		Ǽ",
+	"Ash with macron		Ǣ"
+]
+
+Glyphs_b := [
+	"Dot above		Ḃ",
+	"Dot below		Ḅ",
+	"Macron below		Ḇ"
+]
+Glyphs_c := [
+	"Acute			Ć",
+	"Caron			Č",
+	"Cedilla			Ç",
+	"Circumflex		Ĉ",
+	"Dot above		Ċ",
+	"Cedilla and acute		Ḉ"
+]
+Glyphs_d := [
+	"Caron			Ď",
+	"Cedilla			Ḑ",
+	"Dot above		Ḋ",
+	"Dot below		Ḍ",
+	"Circumflex below		Ḓ",
+	"Macron below		Ḏ"
+]
+Glyphs_e := [
+	"Acute			É",
+	"Breve			Ĕ",
+	"Caron			Ě",
+	"Cedilla			Ȩ",
+	"Circumflex		Ê",
+	"Diaeresis			Ë",
+	"Dot above		Ė",
+	"Dot below		Ẹ",
+	"Grave			È",
+	"Hook above		Ẻ",
+	"Macron			Ē",
+	"Ogonek			Ę",
+	"Tilde			Ẽ",
+	"Cedilla and breve		Ḝ",
+	"Circumflex and acute	Ế",
+	"Circumflex and dot below	Ệ",
+	"Circumflex and grave	Ề",
+	"Circumflex and hook above	Ể",
+	"Circumflex and tilde		Ễ",
+	"Circumflex below		Ḙ",
+	"Double grave		Ȅ",
+	"Inverted breve		Ȇ",
+	"Macron and acute		Ḗ",
+	"Macron and grave		Ḕ",
+	"Tilde below		Ḛ"
+]
+Glyphs_f := [
+	"Dot above		Ḟ"
+]
+Glyphs_g := [
+	"Acute			Ǵ",
+	"Breve			Ğ",
+	"Caron			Ǧ",
+	"Cedilla			Ģ",
+	"Circumflex		Ĝ",
+	"Dot above		Ġ",
+	"Macron			Ḡ"
+]
+Glyphs_h := [
+	"Caron			Ȟ",
+	"Cedilla			Ḩ",
+	"Circumflex		Ĥ",
+	"Diaeresis			Ḧ",
+	"Dot above		Ḣ",
+	"Dot below		Ḥ",
+	"Breve below		Ḫ",
+	"Macron below		ẖ"
+]
+Glyphs_i := [
+	"Acute			Í",
+	"Breve			Ĭ",
+	"Caron			Ǐ",
+	"Circumflex		Î",
+	"Diaeresis			Ï",
+	"Dot above		İ",
+	"Dot below		Ị",
+	"Grave			Ì",
+	"Hook above		Ỉ",
+	"Macron			Ī",
+	"Ogonek			Į",
+	"Tilde			Ĩ",
+	"Diaeresis and acute		Ḯ",
+	"Double grave		Ȉ",
+	"Inverted breve		Ȋ",
+	"Tilde below		Ḭ"
+]
+Glyphs_j := [
+	"Circumflex		Ĵ"
+]
+Glyphs_k := [
+	"Acute			Ḱ",
+	"Caron			Ǩ",
+	"Cedilla			Ķ",
+	"Dot below		Ḳ",
+	"Macron below		Ḵ"
+]
+Glyphs_l := [
+	"Acute			Ĺ",
+	"Caron			Ľ",
+	"Cedilla			Ļ",
+	"Dot below		Ḷ",
+	"Circumflex below		Ḽ",
+	"Dot below and macron	Ḹ",
+	"Macron below		Ḻ"
+]
+Glyphs_m := [
+	"Acute			Ḿ",
+	"Dot above		Ṁ",
+	"Dot below		Ṃ"
+]
+Glyphs_n := [
+	"Acute			Ń",
+	"Caron			Ň",
+	"Cedilla			Ņ",
+	"Dot above		Ṅ",
+	"Dot below		Ṇ",
+	"Grave			Ǹ",
+	"Tilde			Ñ",
+	"Circumflex below		Ṋ",
+	"Macron below		Ṉ"
+]
+Glyphs_o := [
+	"Acute			Ó",
+	"Breve			Ŏ",
+	"Caron			Ǒ",
+	"Circumflex		Ô",
+	"Diaeresis			Ö",
+	"Dot above		Ȯ",
+	"Dot below		Ọ",
+	"Grave			Ò",
+	"Hook above		Ỏ",
+	"Horn			Ơ",
+	"Macron			Ō",
+	"Ogonek			Ǫ",
+	"Tilde			Õ",
+	"Circumflex and acute	Ố",
+	"Circumflex and dot below	Ộ",
+	"Circumflex and grave	Ồ",
+	"Circumflex and hook above	Ổ",
+	"Circumflex and tilde		Ỗ",
+	"Diaeresis and macron	Ȫ",
+	"Dot above and macron	Ȱ",
+	"Double acute		Ő",
+	"Double grave		Ȍ",
+	"Horn and acute		Ớ",
+	"Horn and dot below		Ợ",
+	"Horn and grave		Ờ",
+	"Horn and hook above	Ở",
+	"Horn and tilde		Ỡ",
+	"Inverted breve		Ȏ",
+	"Macron and acute		Ṓ",
+	"Macron and grave		Ṑ",
+	"Ogonek and macron	Ǭ",
+	"Tilde and acute		Ṍ",
+	"Tilde and diaeresis		Ṏ",
+	"Tilde and macron		Ȭ",
+	"O with slash		Ø",
+	"O with slash and acute	Ǿ",
+	"Ethel			Œ",
+]
+Glyphs_p := [
+	"Acute			Ṕ",
+	"Dot above		Ṗ"
+]
+Glyphs_r := [
+	"Acute			Ŕ",
+	"Caron			Ř",
+	"Cedilla			Ŗ",
+	"Dot above		Ṙ",
+	"Dot below		Ṛ",
+	"Dot below and macron	Ṝ",
+	"Double grave		Ȑ",
+	"Inverted breve		Ȓ",
+	"Macron below		Ṟ"
+]
+Glyphs_s := [
+	"Acute			Ś",
+	"Caron			Š",
+	"Cedilla			Ş",
+	"Circumflex		Ŝ",
+	"Comma below		Ș",
+	"Dot above		Ṡ",
+	"Dot below		Ṣ",
+	"Acute and dot above	Ṥ",
+	"Caron and dot above	Ṧ",
+	"Dot below and dot above	Ṩ",
+	"Eszett			ß"
+]
+Glyphs_t := [
+	"Caron			Ť",
+	"Cedilla			Ţ",
+	"Comma below		Ț",
+	"Diaeresis			ẗ",
+	"Dot above		Ṫ",
+	"Dot below		Ṭ",
+	"Circumflex below		Ṱ",
+	"Macron below		Ṯ"
+]
+Glyphs_u := [
+	"Acute			Ú",
+	"Breve			Ŭ",
+	"Caron			Ǔ",
+	"Circumflex		Û",
+	"Diaeresis			Ü",
+	"Dot below		Ụ",
+	"Grave			Ù",
+	"Hook above		Ủ",
+	"Horn			Ư",
+	"Macron			Ū",
+	"Ogonek			Ų",
+	"Ring above		Ů",
+	"Tilde			Ũ",
+	"Circumflex below		Ṷ",
+	"Diaeresis and acute		Ǘ",
+	"Diaeresis and caron		Ǚ",
+	"Diaeresis and grave		Ǜ",
+	"Diaeresis and macron	Ǖ",
+	"Diaeresis below		Ṳ",
+	"Double acute		Ű",
+	"Double grave		Ȕ",
+	"Horn and acute		Ứ",
+	"Horn and dot below		Ự",
+	"Horn and grave		Ừ",
+	"Horn and hook above	Ử",
+	"Horn and tilde		Ữ",
+	"Inverted breve		Ȗ",
+	"Macron and diaeresis	Ṻ",
+	"Tilde and acute		Ṹ",
+	"Tilde below		Ṵ"
+]
+Glyphs_v := [
+	"Dot below		Ṿ",
+	"Tilde			Ṽ"
+]
+Glyphs_w := [
+	"Acute			Ẃ",
+	"Circumflex		Ŵ",
+	"Diaeresis			Ẅ",
+	"Dot above		Ẇ",
+	"Dot below		Ẉ",
+	"Grave			Ẁ",
+	"Ring above		ẘ"
+]
+Glyphs_x := [
+	"Diaeresis			Ẍ",
+	"Dot above		Ẋ"
+]
+Glyphs_y := [
+	"Acute			Ý",
+	"Circumflex		Ŷ",
+	"Diaeresis			Ÿ",
+	"Dot above		Ẏ",
+	"Dot below		Ỵ",
+	"Grave			Ỳ",
+	"Hook above		Ỷ",
+	"Macron			Ȳ",
+	"Ring above		ẙ",
+	"Tilde			Ỹ"
+]
+Glyphs_z := [
+	"Acute			Ź",
+	"Caron			Ž",
+	"Circumflex		Ẑ",
+	"Dot above		Ż",
+	"Dot below		Ẓ",
+	"Macron below		Ẕ",
+	"Ezh			Ʒ",
+	"Ezh with caron		Ǯ"
+]
+
+
+; TRAY ICON ===============================================
+{
+	; Icons generated using Image2Include v2 by iPhilip https://www.autohotkey.com/boards/viewtopic.php?style=1&t=119966
+	B64_Icon :=
+		"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"
+
+
+	Create_Image(B64, NewHandle := True) {
+		; This function adapted from Image2Include v2 by iPhilip https://www.autohotkey.com/boards/viewtopic.php?style=1&t=119966
+		Static hBitmap := 0
+		If (NewHandle)
+			hBitmap := 0
+		If (hBitmap)
+			Return hBitmap
+
+		If !DllCall("Crypt32.dll\CryptStringToBinary", "Ptr", StrPtr(B64), "UInt", 0, "UInt", 0x01, "Ptr", 0, "UIntP", &DecLen :=
+		0, "Ptr", 0, "Ptr", 0)
+			Return False
+		Dec := Buffer(DecLen, 0)
+		If !DllCall("Crypt32.dll\CryptStringToBinary", "Ptr", StrPtr(B64), "UInt", 0, "UInt", 0x01, "Ptr", Dec, "UIntP", &
+		DecLen, "Ptr", 0, "Ptr", 0)
+			Return False
+		; Bitmap creation adopted from "How to convert Image data (JPEG/PNG/GIF) to hBITMAP?" by SKAN
+		; -> http://www.autohotkey.com/board/topic/21213-how-to-convert-image-data-jpegpnggif-to-hbitmap/?p=139257
+		hData := DllCall("Kernel32.dll\GlobalAlloc", "UInt", 2, "UPtr", DecLen, "UPtr")
+		pData := DllCall("Kernel32.dll\GlobalLock", "Ptr", hData, "UPtr")
+		DllCall("Kernel32.dll\RtlMoveMemory", "Ptr", pData, "Ptr", Dec, "UPtr", DecLen)
+		DllCall("Kernel32.dll\GlobalUnlock", "Ptr", hData)
+		DllCall("Ole32.dll\CreateStreamOnHGlobal", "Ptr", hData, "Int", True, "PtrP", pStream := ComValue(13, 0))
+		hGdip := DllCall("Kernel32.dll\LoadLibrary", "Str", "Gdiplus.dll", "UPtr")
+		SI := Buffer(8 + 2 * A_PtrSize, 0), NumPut("UInt", 1, SI, 0)
+		DllCall("Gdiplus.dll\GdiplusStartup", "PtrP", &pToken := 0, "Ptr", SI, "Ptr", 0)
+		DllCall("Gdiplus.dll\GdipCreateBitmapFromStream", "Ptr", pStream, "PtrP", &pBitmap := 0)
+		DllCall("Gdiplus.dll\GdipCreateHBITMAPFromBitmap", "Ptr", pBitmap, "PtrP", &hBitmap := 0, "UInt", 0)
+		DllCall("Gdiplus.dll\GdipDisposeImage", "Ptr", pBitmap)
+		DllCall("Gdiplus.dll\GdiplusShutdown", "Ptr", pToken)
+		DllCall("Kernel32.dll\FreeLibrary", "Ptr", hGdip)
+		Return hBitmap
+	}
+
+	TraySetIcon("HBITMAP:*" . Create_Image(B64_Icon))
+}
