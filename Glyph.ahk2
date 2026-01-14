@@ -56,7 +56,7 @@ CapsLock & z::
 Enter::
 NumpadEnter::{
 	Global
-	Send_Glyph(GlyphListBox)
+	Send_Glyph(GlyphListView)
 }
 
 BackSpace::{
@@ -87,15 +87,25 @@ Numpad0::{
 	; Sends the first/second/etc. glyph from the list
 	Global
 	this_number := SubStr(A_ThisHotkey, -1, 1) ; Strips the number from the hotkey
-	Try { ; Will fail if there is no glyph in that position number
-		GlyphListBox.Choose(Integer(this_number)) ; Selects the appropriate row
+	If this_number = 0 {
+		this_number := 10
 	}
-	Send_Glyph(GlyphListBox)
+
+	Try { ; Will fail if there is no glyph in that position number
+		GlyphListView.Modify(this_number, "Focus Select") ; Selects the appropriate row
+	}
+
+	this_row_num := GlyphListView.GetNext(2, "Focused")
+	this_glyph := GlyphListView.GetText(this_row_num, 2)
+
+	Send_Glyph(GlyphListView)
 }
 
 ; FUNCTIONS ===============================================
 Launch_Glyph(this_letter) {
 	Global
+	glyph_list := %this_letter%_Glyphs
+
 	; Create the GUI
 	GlyphGUI := Gui()
 	GlyphGUI.Title := "Select a character to insert - Glyph"
@@ -104,23 +114,48 @@ Launch_Glyph(this_letter) {
 	GlyphGUI.Opt("+AlwaysOnTop -MaximizeBox -MinimizeBox")
 	GlyphGUI.SetFont("s12")
 
-	GlyphListBox := GlyphGUI.Add("ListBox", "R10 w275 T36", Glyphs_%this_letter%)
+	GlyphListView := GlyphGUI.Add("ListView", "X+M R11 w275 T36 -Hdr", [
+		"Diacritic",
+		"Ch",
+		"#"
+	])
+
+
+	Loop glyph_list.Length {
+		If A_Index < 11 {
+			GlyphListView.Add("", glyph_list[A_Index][2], glyph_list[A_Index][1], SubStr(A_Index, -1, 1))
+		}
+		Else {
+			GlyphListView.Add("", glyph_list[A_Index][2], glyph_list[A_Index][1])
+		}
+	}
+
+	GlyphListView.ModifyCol(1)
+
+
 	GlyphGUI.Add("Text", "w275 Center", "Backspace or Escape to cancel")
 
 	; GUI Events
-	GlyphListBox.OnEvent("DoubleClick", Send_Glyph)
-	GlyphListBox.OnEvent("LoseFocus", GlyphGUI_Destroy)
+	GlyphListView.OnEvent("DoubleClick", Send_Glyph)
+	GlyphListView.OnEvent("LoseFocus", GlyphGUI_Destroy)
 	GlyphGUI.OnEvent("Escape", GlyphGUI_Destroy)
 
 	; Position GUI near mouse cursor
 	CoordMode "Mouse", "Screen"
 	MouseGetPos(&MouseX, &MouseY)
-	GlyphGUI.Show("x" . MouseX - 10. " y" . MouseY - 5 . " NA Autosize")
+	GlyphGUI.Show("x" . MouseX - 10. " y" . MouseY - 5 . "Autosize")
 }
 
 
 Send_Glyph(GuiCtrlObj, *) {
-	this_glyph := SubStr(GuiCtrlObj.Text, -1) ; Strips glyph from rest of line
+	this_row_num := GuiCtrlObj.GetNext()
+
+	If this_row_num = 0 {
+		this_row_num := 1
+	}
+
+
+	this_glyph := GuiCtrlObj.GetText(this_row_num, 2)
 	GlyphGUI_Destroy()
 
 	; Reactivates previous window to Send to
@@ -145,321 +180,1237 @@ GlyphGUI_Destroy(*) {
 
 
 ; GLYPH ARRAYS ============================================
-Glyphs_a := [
-	"Acute			Á",
-	"Breve			Ă",
-	"Caron			Ǎ",
-	"Circumflex		Â",
-	"Diaeresis			Ä",
-	"Dot above		Ȧ",
-	"Dot below		Ạ",
-	"Grave			À",
-	"Hook above		Ả",
-	"Macron			Ā",
-	"Ogonek			Ą",
-	"Ring above		Å",
-	"Ring below		Ḁ",
-	"Tilde			Ã",
-	"Breve and acute		Ắ",
-	"Breve and dot below	Ặ",
-	"Breve and grave		Ằ",
-	"Breve and hook above	Ẳ",
-	"Breve and tilde		Ẵ",
-	"Circumflex and acute	Ấ",
-	"Circumflex and dot below	Ậ",
-	"Circumflex and grave	Ầ",
-	"Circumflex and hook above	Ẩ",
-	"Circumflex and tilde		Ẫ",
-	"Diaeresis and macron	Ǟ",
-	"Dot above and macron	Ǡ",
-	"Double grave		Ȁ",
-	"Inverted breve		Ȃ",
-	"Ring above and acute	Ǻ",
-	"Ash			Æ",
-	"Ash with acute		Ǽ",
-	"Ash with macron		Ǣ"
+; Apologies for the scrolling; there's nothing interesting after this.
+A_Glyphs := [
+	[
+		"Á",
+		"Acute"
+	],
+	[
+		"À",
+		"Grave"
+	],
+	[
+		"Ȧ",
+		"Dot above"
+	],
+	[
+		"Â",
+		"Circumflex"
+	],
+	[
+		"Ä",
+		"Diaeresis"
+	],
+	[
+		"Ǎ",
+		"Caron"
+	],
+	[
+		"Ă",
+		"Breve"
+	],
+	[
+		"Ā",
+		"Macron"
+	],
+	[
+		"Ã",
+		"Tilde"
+	],
+	[
+		"Å",
+		"Ring above"
+	],
+	[
+		"Ą",
+		"Ogonek"
+	],
+	[
+		"Ấ",
+		"Circumflex and acute"
+	],
+	[
+		"Ầ",
+		"Circumflex and grave"
+	],
+	[
+		"Ắ",
+		"Breve and acute"
+	],
+	[
+		"Ằ",
+		"Breve and grave"
+	],
+	[
+		"Ǡ",
+		"Dot above and macron"
+	],
+	[
+		"Ǻ",
+		"Ring above and acute"
+	],
+	[
+		"Ǟ",
+		"Diaeresis and macron"
+	],
+	[
+		"Ẫ",
+		"Circumflex and tilde"
+	],
+	[
+		"Ẵ",
+		"Breve and tilde"
+	],
+	[
+		"Ả",
+		"Hook above"
+	],
+	[
+		"Ȁ",
+		"Double grave"
+	],
+	[
+		"Ȃ",
+		"Inverted breve"
+	],
+	[
+		"Ẩ",
+		"Circumflex and hook above"
+	],
+	[
+		"Ẳ",
+		"Breve and hook above"
+	],
+	[
+		"Ạ",
+		"Dot below"
+	],
+	[
+		"Ḁ",
+		"Ring below"
+	],
+	[
+		"Ậ",
+		"Circumflex and dot below"
+	],
+	[
+		"Ặ",
+		"Breve and dot below"
+	],
+	[
+		"Æ",
+		"Ash"
+	],
+	[
+		"Ǽ",
+		"Ash with acute"
+	],
+	[
+		"Ǣ",
+		"Ash with macron"
+	]
 ]
 
-Glyphs_b := [
-	"Dot above		Ḃ",
-	"Dot below		Ḅ",
-	"Macron below		Ḇ"
+B_Glyphs :=
+	[
+		[
+			"Ḃ",
+			"Dot above"
+		],
+		[
+			"Ḅ",
+			"Dot below"
+		],
+		[
+			"Ḇ",
+			"Macron below"
+		]
+	]
+C_Glyphs :=
+	[
+		[
+			"Ć",
+			"Acute"
+		],
+		[
+			"Ċ",
+			"Dot above"
+		],
+		[
+			"Ĉ",
+			"Circumflex"
+		],
+		[
+			"Č",
+			"Caron"
+		],
+		[
+			"Ç",
+			"Cedilla"
+		],
+		[
+			"Ȼ",
+			"Stroke"
+		],
+		[
+			"Ḉ",
+			"Cedilla and acute"
+		],
+		[
+			"Ƈ",
+			"Hook"
+		],
+		[
+			"Ꞓ",
+			"Bar"
+		],
+		[
+			"Ꞔ",
+			"Palatal hook"
+		]
+	]
+
+D_Glyphs := [
+	[
+		"Ḋ",
+		"Dot above"
+	],
+	[
+		"Ď",
+		"Caron"
+	],
+	[
+		"Ḑ",
+		"Cedilla"
+	],
+	[
+		"Ꟈ",
+		"Short stroke overlay"
+	],
+	[
+		"Đ",
+		"Stroke through stem"
+	],
+	[
+		"Ƌ",
+		"Topbar"
+	],
+	[
+		"Ɗ",
+		"Hook"
+	],
+	[
+		"Ḍ",
+		"Dot below"
+	],
+	[
+		"Ḓ",
+		"Circumflex below"
+	],
+	[
+		"Ḏ",
+		"Macron below"
+	],
+	[
+		"Ɖ",
+		"Tail"
+	]
 ]
-Glyphs_c := [
-	"Acute			Ć",
-	"Caron			Č",
-	"Cedilla			Ç",
-	"Circumflex		Ĉ",
-	"Dot above		Ċ",
-	"Cedilla and acute		Ḉ"
+
+E_Glyphs :=
+	[
+		[
+			"É",
+			"Acute"
+		],
+		[
+			"È",
+			"Grave"
+		],
+		[
+			"Ė",
+			"Dot above"
+		],
+		[
+			"Ê",
+			"Circumflex"
+		],
+		[
+			"Ë",
+			"Diaeresis"
+		],
+		[
+			"Ě",
+			"Caron"
+		],
+		[
+			"Ĕ",
+			"Breve"
+		],
+		[
+			"Ē",
+			"Macron"
+		],
+		[
+			"Ẽ",
+			"Tilde"
+		],
+		[
+			"Ę",
+			"Ogonek"
+		],
+		[
+			"Ȩ",
+			"Cedilla"
+		],
+		[
+			"Ế",
+			"Circumflex and acute"
+		],
+		[
+			"Ề",
+			"Circumflex and grave"
+		],
+		[
+			"Ḗ",
+			"Macron and acute"
+		],
+		[
+			"Ḕ",
+			"Macron and grave"
+		],
+		[
+			"Ễ",
+			"Circumflex and tilde"
+		],
+		[
+			"Ḝ",
+			"Cedilla and breve"
+		],
+		[
+			"Ẻ",
+			"Hook above"
+		],
+		[
+			"Ȅ",
+			"Double grave"
+		],
+		[
+			"Ȇ",
+			"Inverted breve"
+		],
+		[
+			"Ể",
+			"Circumflex and hook above"
+		],
+		[
+			"Ẹ",
+			"Dot below"
+		],
+		[
+			"Ḙ",
+			"Circumflex below"
+		],
+		[
+			"Ḛ",
+			"Tilde below"
+		],
+		[
+			"Ệ",
+			"Circumflex and dot below"
+		]
+	]
+F_Glyphs := [
+	[
+		"Ꞙ",
+		"Stroke"
+	],
+	[
+		"Ḟ",
+		"Dot above"
+	],
+	[
+		"Ƒ ",
+		" Hook "
+	]
 ]
-Glyphs_d := [
-	"Caron			Ď",
-	"Cedilla			Ḑ",
-	"Dot above		Ḋ",
-	"Dot below		Ḍ",
-	"Circumflex below		Ḓ",
-	"Macron below		Ḏ"
+
+G_Glyphs := [
+	[
+		"Ǵ",
+		"Acute"
+	],
+	[
+		"Ġ",
+		"Dot above"
+	],
+	[
+		"Ĝ",
+		"Circumflex"
+	],
+	[
+		"Ǧ",
+		"Caron"
+	],
+	[
+		"Ğ",
+		"Breve"
+	],
+	[
+		"Ḡ",
+		"Macron"
+	],
+	[
+		"Ģ",
+		"Cedilla"
+	],
+	[
+		"Ǥ",
+		"Stroke "
+	],
+	[
+		"Ɠ",
+		"Hook"
+	],
+	[
+		"ᶃ",
+		"Palatal Hook"
+	]
 ]
-Glyphs_e := [
-	"Acute			É",
-	"Breve			Ĕ",
-	"Caron			Ě",
-	"Cedilla			Ȩ",
-	"Circumflex		Ê",
-	"Diaeresis			Ë",
-	"Dot above		Ė",
-	"Dot below		Ẹ",
-	"Grave			È",
-	"Hook above		Ẻ",
-	"Macron			Ē",
-	"Ogonek			Ę",
-	"Tilde			Ẽ",
-	"Cedilla and breve		Ḝ",
-	"Circumflex and acute	Ế",
-	"Circumflex and dot below	Ệ",
-	"Circumflex and grave	Ề",
-	"Circumflex and hook above	Ể",
-	"Circumflex and tilde		Ễ",
-	"Circumflex below		Ḙ",
-	"Double grave		Ȅ",
-	"Inverted breve		Ȇ",
-	"Macron and acute		Ḗ",
-	"Macron and grave		Ḕ",
-	"Tilde below		Ḛ"
+
+H_Glyphs := [
+	[
+		"Ḣ",
+		"Dot above"
+	],
+	[
+		"Ĥ",
+		"Circumflex"
+	],
+	[
+		"Ḧ",
+		"Diaeresis"
+	],
+	[
+		"Ȟ",
+		"Caron"
+	],
+	[
+		"Ḩ",
+		"Cedilla"
+	],
+	[
+		"Ħ",
+		"Stroke"
+	],
+	[
+		"Ḥ",
+		"Dot below"
+	],
+	[
+		"Ḫ",
+		"Breve below"
+	],
+	[
+		"ẖ",
+		"Macron below"
+	],
 ]
-Glyphs_f := [
-	"Dot above		Ḟ"
+
+I_Glyphs := [
+	[
+		"Í",
+		"Acute"
+	],
+	[
+		"Ì",
+		"Grave"
+	],
+	[
+		"İ",
+		"Dot above"
+	],
+	[
+		"Î",
+		"Circumflex"
+	],
+	[
+		"Ï",
+		"Diaeresis"
+	],
+	[
+		"Ǐ",
+		"Caron"
+	],
+	[
+		"Ĭ",
+		"Breve"
+	],
+	[
+		"Ī",
+		"Macron"
+	],
+	[
+		"Ĩ",
+		"Tilde"
+	],
+	[
+		"Į",
+		"Ogonek"
+	],
+	[
+		"Ḯ",
+		"Diaeresis and acute"
+	],
+	[
+		"Ỉ",
+		"Hook above"
+	],
+	[
+		"Ȉ",
+		"Double grave"
+	],
+	[
+		"Ȋ",
+		"Inverted breve"
+	],
+	[
+		"Ị",
+		"Dot below"
+	],
+	[
+		"Ḭ",
+		"Tilde below"
+	]
 ]
-Glyphs_g := [
-	"Acute			Ǵ",
-	"Breve			Ğ",
-	"Caron			Ǧ",
-	"Cedilla			Ģ",
-	"Circumflex		Ĝ",
-	"Dot above		Ġ",
-	"Macron			Ḡ"
+
+J_Glyphs := [
+	[
+		"Ĵ",
+		"Circumflex"
+	]
 ]
-Glyphs_h := [
-	"Caron			Ȟ",
-	"Cedilla			Ḩ",
-	"Circumflex		Ĥ",
-	"Diaeresis			Ḧ",
-	"Dot above		Ḣ",
-	"Dot below		Ḥ",
-	"Breve below		Ḫ",
-	"Macron below		ẖ"
+K_Glyphs := [
+	[
+		"Ḱ",
+		"Acute"
+	],
+	[
+		"Ǩ",
+		"Caron"
+	],
+	[
+		"Ķ",
+		"Cedilla"
+	],
+	[
+		"Ḳ",
+		"Dot below"
+	],
+	[
+		"Ḵ",
+		"Macron below"
+	]
 ]
-Glyphs_i := [
-	"Acute			Í",
-	"Breve			Ĭ",
-	"Caron			Ǐ",
-	"Circumflex		Î",
-	"Diaeresis			Ï",
-	"Dot above		İ",
-	"Dot below		Ị",
-	"Grave			Ì",
-	"Hook above		Ỉ",
-	"Macron			Ī",
-	"Ogonek			Į",
-	"Tilde			Ĩ",
-	"Diaeresis and acute		Ḯ",
-	"Double grave		Ȉ",
-	"Inverted breve		Ȋ",
-	"Tilde below		Ḭ"
+
+L_Glyphs := [
+	[
+		"Ĺ",
+		"Acute"
+	],
+	[
+		"Ľ",
+		"Caron"
+	],
+	[
+		"Ⱡ",
+		"Double bar"
+	],
+	[
+		"Ļ",
+		"Cedilla"
+	],
+	[
+		"Ƚ",
+		"Bar"
+	],
+	[
+		"Ł",
+		"Stroke"
+	],
+	[
+		"Ḷ",
+		"Dot below"
+	],
+	[
+		"Ḽ",
+		"Circumflex below"
+	],
+	[
+		"Ḻ",
+		"Macron below"
+	],
+	[
+		"Ḹ",
+		"Dot below and macron"
+	],
+	[
+		"Ꝉ",
+		"High stroke"
+	],
 ]
-Glyphs_j := [
-	"Circumflex		Ĵ"
+
+M_Glyphs := [
+	[
+		"Ḿ",
+		"Acute"
+	],
+	[
+		"Ṁ",
+		"Dot above"
+	],
+	[
+		"Ṃ",
+		"Dot below"
+	]
 ]
-Glyphs_k := [
-	"Acute			Ḱ",
-	"Caron			Ǩ",
-	"Cedilla			Ķ",
-	"Dot below		Ḳ",
-	"Macron below		Ḵ"
+
+N_Glyphs := [
+	[
+		"Ń",
+		"Acute"
+	],
+	[
+		"Ǹ",
+		"Grave"
+	],
+	[
+		"Ṅ",
+		"Dot above"
+	],
+	[
+		"Ň",
+		"Caron"
+	],
+	[
+		"N̄",
+		"Macron above"
+	],
+	[
+		"Ñ",
+		"Tilde"
+	],
+	[
+		"Ņ",
+		"Cedilla"
+	],
+	[
+		"Ɲ",
+		"Left hook"
+	],
+	[
+		"Ƞ",
+		"Long right leg"
+	],
+	[
+		"Ṇ",
+		"Dot below"
+	],
+	[
+		"ɳ",
+		"Retroflex hook"
+	],
+	[
+		"Ṋ",
+		"Circumflex below"
+	],
+	[
+		"Ṉ",
+		"Macron below"
+	],
+	[
+		"ȵ",
+		"Curl"
+	],
+	[
+		"Ŋ",
+		"Right hook"
+	],
+	[
+		"Ꞑ",
+		"Descender"
+	]
 ]
-Glyphs_l := [
-	"Acute			Ĺ",
-	"Caron			Ľ",
-	"Cedilla			Ļ",
-	"Dot below		Ḷ",
-	"Circumflex below		Ḽ",
-	"Dot below and macron	Ḹ",
-	"Macron below		Ḻ"
+
+O_Glyphs := [
+	[
+		"Ó",
+		"Acute"
+	],
+	[
+		"Ò",
+		"Grave"
+	],
+	[
+		"Ȯ",
+		"Dot above"
+	],
+	[
+		"Ô",
+		"Circumflex"
+	],
+	[
+		"Ö",
+		"Diaeresis"
+	],
+	[
+		"Ǒ",
+		"Caron"
+	],
+	[
+		"Ŏ",
+		"Breve"
+	],
+	[
+		"Ō",
+		"Macron"
+	],
+	[
+		"Õ",
+		"Tilde"
+	],
+	[
+		"Ǫ",
+		"Ogonek"
+	],
+	[
+		"Ő",
+		"Double acute"
+	],
+	[
+		"Ố",
+		"Circumflex and acute"
+	],
+	[
+		"Ồ",
+		"Circumflex and grave"
+	],
+	[
+		"Ṓ",
+		"Macron and acute"
+	],
+	[
+		"Ṑ",
+		"Macron and grave"
+	],
+	[
+		"Ȱ",
+		"Dot above and macron"
+	],
+	[
+		"Ṍ",
+		"Tilde and acute"
+	],
+	[
+		"Ȫ",
+		"Diaeresis and macron"
+	],
+	[
+		"Ỗ",
+		"Circumflex and tilde"
+	],
+	[
+		"Ṏ",
+		"Tilde and diaeresis"
+	],
+	[
+		"Ȭ",
+		"Tilde and macron"
+	],
+	[
+		"Ǭ",
+		"Ogonek and macron"
+	],
+	[
+		"Ỏ",
+		"Hook above"
+	],
+	[
+		"Ȍ",
+		"Double grave"
+	],
+	[
+		"Ȏ",
+		"Inverted breve"
+	],
+	[
+		"Ơ",
+		"Horn"
+	],
+	[
+		"Ổ",
+		"Circumflex and hook above"
+	],
+	[
+		"Ọ",
+		"Dot below"
+	],
+	[
+		"Ớ",
+		"Horn and acute"
+	],
+	[
+		"Ờ",
+		"Horn and grave"
+	],
+	[
+		"Ỡ",
+		"Horn and tilde"
+	],
+	[
+		"Ộ",
+		"Circumflex and dot below"
+	],
+	[
+		"Ở",
+		"Horn and hook above"
+	],
+	[
+		"Ợ",
+		"Horn and dot below"
+	],
+	[
+		"Ø",
+		"O with slash"
+	],
+	[
+		"Ǿ",
+		"O with slash and acute"
+	],
+	[
+		"Œ",
+		"Ethel"
+	]
 ]
-Glyphs_m := [
-	"Acute			Ḿ",
-	"Dot above		Ṁ",
-	"Dot below		Ṃ"
+
+P_Glyphs := [
+	[
+		"Ṕ",
+		"Acute"
+	],
+	[
+		"Ṗ",
+		"Dot above"
+	],
+	[
+		"Ᵽ",
+		"Stroke"
+	],
+	[
+		"Ƥ",
+		"Hook"
+	],
 ]
-Glyphs_n := [
-	"Acute			Ń",
-	"Caron			Ň",
-	"Cedilla			Ņ",
-	"Dot above		Ṅ",
-	"Dot below		Ṇ",
-	"Grave			Ǹ",
-	"Tilde			Ñ",
-	"Circumflex below		Ṋ",
-	"Macron below		Ṉ"
+
+R_Glyphs := [
+	[
+		"Ŕ",
+		"Acute"
+	],
+	[
+		"Ṙ",
+		"Dot above"
+	],
+	[
+		"Ř",
+		"Caron"
+	],
+	[
+		"Ŗ",
+		"Cedilla"
+	],
+	[
+		"Ɽ",
+		"Tail"
+	],
+	[
+		"Ȑ",
+		"Double grave"
+	],
+	[
+		"Ȓ",
+		"Inverted breve"
+	],
+	[
+		"Ṛ",
+		"Dot below"
+	],
+	[
+		"Ṟ",
+		"Macron below"
+	],
+	[
+		"Ṝ",
+		"Dot below and macron"
+	],
+	[
+		"Ꝛ",
+		"r rotunda"
+	],
+	[
+		"Ꞧ",
+		"Oblique Stroke"
+	],
 ]
-Glyphs_o := [
-	"Acute			Ó",
-	"Breve			Ŏ",
-	"Caron			Ǒ",
-	"Circumflex		Ô",
-	"Diaeresis			Ö",
-	"Dot above		Ȯ",
-	"Dot below		Ọ",
-	"Grave			Ò",
-	"Hook above		Ỏ",
-	"Horn			Ơ",
-	"Macron			Ō",
-	"Ogonek			Ǫ",
-	"Tilde			Õ",
-	"Circumflex and acute	Ố",
-	"Circumflex and dot below	Ộ",
-	"Circumflex and grave	Ồ",
-	"Circumflex and hook above	Ổ",
-	"Circumflex and tilde		Ỗ",
-	"Diaeresis and macron	Ȫ",
-	"Dot above and macron	Ȱ",
-	"Double acute		Ő",
-	"Double grave		Ȍ",
-	"Horn and acute		Ớ",
-	"Horn and dot below		Ợ",
-	"Horn and grave		Ờ",
-	"Horn and hook above	Ở",
-	"Horn and tilde		Ỡ",
-	"Inverted breve		Ȏ",
-	"Macron and acute		Ṓ",
-	"Macron and grave		Ṑ",
-	"Ogonek and macron	Ǭ",
-	"Tilde and acute		Ṍ",
-	"Tilde and diaeresis		Ṏ",
-	"Tilde and macron		Ȭ",
-	"O with slash		Ø",
-	"O with slash and acute	Ǿ",
-	"Ethel			Œ",
+
+S_Glyphs := [
+	[
+		"Ś",
+		"Acute"
+	],
+	[
+		"Ṡ",
+		"Dot above"
+	],
+	[
+		"Ŝ",
+		"Circumflex"
+	],
+	[
+		"Š",
+		"Caron"
+	],
+	[
+		"Ş",
+		"Cedilla"
+	],
+	[
+		"Ṥ",
+		"Acute and dot above"
+	],
+	[
+		"Ṧ",
+		"Caron and dot above"
+	],
+	[
+		"Ṣ",
+		"Dot below"
+	],
+	[
+		"Ș",
+		"Comma below"
+	],
+	[
+		"Ṩ",
+		"Dot below and dot above"
+	],
+	[
+		"ß",
+		"Eszett"
+	]
 ]
-Glyphs_p := [
-	"Acute			Ṕ",
-	"Dot above		Ṗ"
+
+T_Glyphs := [
+	[
+		"Ṫ",
+		"Dot above"
+	],
+	[
+		"ẗ",
+		"Diaeresis"
+	],
+	[
+		"Ť",
+		"Caron"
+	],
+	[
+		"Ţ",
+		"Cedilla"
+	],
+	[
+		"Ƭ",
+		"Hook"
+	],
+	[
+		"Ṭ",
+		"Dot below"
+	],
+	[
+		"Ț",
+		"Comma below"
+	],
+	[
+		"Ṱ",
+		"Circumflex below"
+	],
+	[
+		"Ṯ",
+		"Macron below"
+	],
+	[
+		"Ŧ ",
+		" Bar "
+	],
 ]
-Glyphs_r := [
-	"Acute			Ŕ",
-	"Caron			Ř",
-	"Cedilla			Ŗ",
-	"Dot above		Ṙ",
-	"Dot below		Ṛ",
-	"Dot below and macron	Ṝ",
-	"Double grave		Ȑ",
-	"Inverted breve		Ȓ",
-	"Macron below		Ṟ"
+
+U_Glyphs := [
+	[
+		"Ú",
+		"Acute"
+	],
+	[
+		"Ù",
+		"Grave"
+	],
+	[
+		"Û",
+		"Circumflex"
+	],
+	[
+		"Ü",
+		"Diaeresis"
+	],
+	[
+		"Ǔ",
+		"Caron"
+	],
+	[
+		"Ŭ",
+		"Breve"
+	],
+	[
+		"Ū",
+		"Macron"
+	],
+	[
+		"Ũ",
+		"Tilde"
+	],
+	[
+		"Ů",
+		"Ring above"
+	],
+	[
+		"Ų",
+		"Ogonek"
+	],
+	[
+		"Ű",
+		"Double acute"
+	],
+	[
+		"Ǘ",
+		"Diaeresis and acute"
+	],
+	[
+		"Ǜ",
+		"Diaeresis and grave"
+	],
+	[
+		"Ǚ",
+		"Diaeresis and caron"
+	],
+	[
+		"Ṹ",
+		"Tilde and acute"
+	],
+	[
+		"Ǖ",
+		"Diaeresis and macron"
+	],
+	[
+		"Ṻ",
+		"Macron and diaeresis"
+	],
+	[
+		"Ủ",
+		"Hook above"
+	],
+	[
+		"Ȕ",
+		"Double grave"
+	],
+	[
+		"Ȗ",
+		"Inverted breve"
+	],
+	[
+		"Ư",
+		"Horn"
+	],
+	[
+		"Ụ",
+		"Dot below"
+	],
+	[
+		"Ṳ",
+		"Diaeresis below"
+	],
+	[
+		"Ứ",
+		"Horn and acute"
+	],
+	[
+		"Ừ",
+		"Horn and grave"
+	],
+	[
+		"Ṷ",
+		"Circumflex below"
+	],
+	[
+		"Ṵ",
+		"Tilde below"
+	],
+	[
+		"Ữ",
+		"Horn and tilde"
+	],
+	[
+		"Ử",
+		"Horn and hook above"
+	],
+	[
+		"Ự",
+		"Horn and dot below"
+	]
 ]
-Glyphs_s := [
-	"Acute			Ś",
-	"Caron			Š",
-	"Cedilla			Ş",
-	"Circumflex		Ŝ",
-	"Comma below		Ș",
-	"Dot above		Ṡ",
-	"Dot below		Ṣ",
-	"Acute and dot above	Ṥ",
-	"Caron and dot above	Ṧ",
-	"Dot below and dot above	Ṩ",
-	"Eszett			ß"
+
+V_Glyphs := [
+	[
+		"Ṽ",
+		"Tilde"
+	],
+	[
+		"Ṿ",
+		"Dot below"
+	]
 ]
-Glyphs_t := [
-	"Caron			Ť",
-	"Cedilla			Ţ",
-	"Comma below		Ț",
-	"Diaeresis			ẗ",
-	"Dot above		Ṫ",
-	"Dot below		Ṭ",
-	"Circumflex below		Ṱ",
-	"Macron below		Ṯ"
+
+W_Glyphs := [
+	[
+		"Ẃ",
+		"Acute"
+	],
+	[
+		"Ẁ",
+		"Grave"
+	],
+	[
+		"Ẇ",
+		"Dot above"
+	],
+	[
+		"Ŵ",
+		"Circumflex"
+	],
+	[
+		"Ẅ",
+		"Diaeresis"
+	],
+	[
+		"ẘ",
+		"Ring above"
+	],
+	[
+		"Ẉ",
+		"Dot below"
+	]
 ]
-Glyphs_u := [
-	"Acute			Ú",
-	"Breve			Ŭ",
-	"Caron			Ǔ",
-	"Circumflex		Û",
-	"Diaeresis			Ü",
-	"Dot below		Ụ",
-	"Grave			Ù",
-	"Hook above		Ủ",
-	"Horn			Ư",
-	"Macron			Ū",
-	"Ogonek			Ų",
-	"Ring above		Ů",
-	"Tilde			Ũ",
-	"Circumflex below		Ṷ",
-	"Diaeresis and acute		Ǘ",
-	"Diaeresis and caron		Ǚ",
-	"Diaeresis and grave		Ǜ",
-	"Diaeresis and macron	Ǖ",
-	"Diaeresis below		Ṳ",
-	"Double acute		Ű",
-	"Double grave		Ȕ",
-	"Horn and acute		Ứ",
-	"Horn and dot below		Ự",
-	"Horn and grave		Ừ",
-	"Horn and hook above	Ử",
-	"Horn and tilde		Ữ",
-	"Inverted breve		Ȗ",
-	"Macron and diaeresis	Ṻ",
-	"Tilde and acute		Ṹ",
-	"Tilde below		Ṵ"
+
+X_Glyphs := [
+	[
+		"Ẋ",
+		"Dot above"
+	],
+	[
+		"Ẍ",
+		"Diaeresis"
+	]
 ]
-Glyphs_v := [
-	"Dot below		Ṿ",
-	"Tilde			Ṽ"
+
+Y_Glyphs := [
+	[
+		"Ý",
+		"Acute"
+	],
+	[
+		"Ỳ",
+		"Grave"
+	],
+	[
+		"Ẏ",
+		"Dot above"
+	],
+	[
+		"Ŷ",
+		"Circumflex"
+	],
+	[
+		"Ÿ",
+		"Diaeresis"
+	],
+	[
+		"Ȳ",
+		"Macron"
+	],
+	[
+		"Ỹ",
+		"Tilde"
+	],
+	[
+		"ẙ",
+		"Ring above"
+	],
+	[
+		"Ỷ",
+		"Hook above"
+	],
+	[
+		"Ỵ",
+		"Dot below"
+	]
 ]
-Glyphs_w := [
-	"Acute			Ẃ",
-	"Circumflex		Ŵ",
-	"Diaeresis			Ẅ",
-	"Dot above		Ẇ",
-	"Dot below		Ẉ",
-	"Grave			Ẁ",
-	"Ring above		ẘ"
-]
-Glyphs_x := [
-	"Diaeresis			Ẍ",
-	"Dot above		Ẋ"
-]
-Glyphs_y := [
-	"Acute			Ý",
-	"Circumflex		Ŷ",
-	"Diaeresis			Ÿ",
-	"Dot above		Ẏ",
-	"Dot below		Ỵ",
-	"Grave			Ỳ",
-	"Hook above		Ỷ",
-	"Macron			Ȳ",
-	"Ring above		ẙ",
-	"Tilde			Ỹ"
-]
-Glyphs_z := [
-	"Acute			Ź",
-	"Caron			Ž",
-	"Circumflex		Ẑ",
-	"Dot above		Ż",
-	"Dot below		Ẓ",
-	"Macron below		Ẕ",
-	"Ezh			Ʒ",
-	"Ezh with caron		Ǯ"
+
+Z_Glyphs := [
+	[
+		"Ź",
+		"Acute"
+	],
+	[
+		"Ż",
+		"Dot above"
+	],
+	[
+		"Ẑ",
+		"Circumflex"
+	],
+	[
+		"Ž",
+		"Caron"
+	],
+	[
+		"Ẓ",
+		"Dot below"
+	],
+	[
+		"Ẕ",
+		"Macron below"
+	],
+	[
+		"Ʒ",
+		"Ezh"
+	],
+	[
+		"Ǯ",
+		"Ezh with caron"
+	]
 ]
 
 
-; TRAY ICON ===============================================
+; TRAY ICON ==============================================================
 {
-	; Icons generated using Image2Include v2 by iPhilip https://www.autohotkey.com/boards/viewtopic.php?style=1&t=119966
-	B64_Icon :=
-		"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"
-
-
 	Create_Image(B64, NewHandle := True) {
 		; This function adapted from Image2Include v2 by iPhilip https://www.autohotkey.com/boards/viewtopic.php?style=1&t=119966
 		Static hBitmap := 0
@@ -492,6 +1443,10 @@ Glyphs_z := [
 		DllCall("Kernel32.dll\FreeLibrary", "Ptr", hGdip)
 		Return hBitmap
 	}
+
+	; Icons generated using Image2Include v2 by iPhilip https://www.autohotkey.com/boards/viewtopic.php?style=1&t=119966
+	B64_Icon :=
+		"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"
 
 	TraySetIcon("HBITMAP:*" . Create_Image(B64_Icon))
 }
