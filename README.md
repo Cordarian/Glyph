@@ -1,5 +1,5 @@
 # Glyph
-An [AutoHotkey v2](https://www.autohotkey.com/) script for typing diacritical characters (accent marks) on a QWERTY keyboard. Glyph contains all precomposed Latin diacritic letters in Unicode.
+An [AutoHotkey v2](https://www.autohotkey.com/) script for typing diacritical characters (accent marks) on a QWERTY keyboard. Glyph contains all [precomposed Latin diacritic letters in Unicode](https://en.wikipedia.org/wiki/List_of_precomposed_Latin_characters_in_Unicode#Letters_with_diacritics).
 
 ![GIF showing the word "Café" being typed. For the E, CapsLock+E is pressed to open Glyph, and the acute é is selected.](https://github.com/Cordarian/Glyph/blob/main/Glyph%20demo.gif?raw=true)
 
